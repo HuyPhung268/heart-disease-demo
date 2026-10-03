@@ -58,7 +58,10 @@ footer, header [data-testid="stStatusWidget"] {{ visibility: hidden; }}
 
 /* ---- Chiều rộng: dùng trọn màn hình ---- */
 .block-container {{
-    padding: 2.1rem 2.6rem 3rem 2.6rem;
+    /* Streamlit có header đục (nền trắng/tối, z-index rất cao) cao 60px phủ
+       từ đỉnh trang. Đệm trên phải lớn hơn 60px, nếu không mép trên của thẻ
+       tab đầu tiên sẽ bị header che mất. */
+    padding: 4.6rem 2.6rem 3rem 2.6rem;
     max-width: 100% !important;
 }}
 @media (min-width: 2200px) {{
