@@ -1,0 +1,12 @@
+# Phụ thuộc của ứng dụng Streamlit (Streamlit Cloud đọc đúng file này).
+# Ghim chính xác phiên bản vì artifacts/*.joblib là pickle của sklearn và
+# LightGBM — lệch phiên bản sẽ nạp mô hình thất bại.
+streamlit==1.51.0
+pandas==2.3.3
+numpy==2.3.5
+scikit-learn==1.7.2
+lightgbm==4.6.0
+plotly==6.3.0
+joblib==1.5.2
+# pandas Styler.background_gradient cần matplotlib (dùng ở bảng chỉ số).
+matplotlib==3.10.6

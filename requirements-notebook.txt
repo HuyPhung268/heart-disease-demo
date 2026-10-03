@@ -1,0 +1,4 @@
+# Thêm cho notebooks/heart_disease_walkthrough.ipynb (không cần trên Streamlit Cloud).
+-r requirements.txt
+seaborn==0.13.2
+notebook

@@ -1,0 +1,46 @@
+About Dataset
+This dataset contains various health indicators and risk factors related to heart disease. Parameters such as age, gender, blood pressure, cholesterol levels, smoking habits, and exercise patterns have been collected to analyze heart disease risk and contribute to health research. The dataset can be used by healthcare professionals, researchers, and data analysts to examine trends related to heart disease, identify risk factors, and perform various health-related analyses.
+
+Columns ;
+
+Age: The individual's age.
+
+Gender: The individual's gender (Male or Female).
+
+Blood Pressure: The individual's blood pressure (systolic).
+
+Cholesterol Level: The individual's total cholesterol level.
+
+Exercise Habits: The individual's exercise habits (Low, Medium, High).
+
+Smoking: Whether the individual smokes or not (Yes or No).
+
+Family Heart Disease: Whether there is a family history of heart disease (Yes or No).
+
+Diabetes: Whether the individual has diabetes (Yes or No).
+
+BMI: The individual's body mass index.
+
+High Blood Pressure: Whether the individual has high blood pressure (Yes or No).
+
+Low HDL Cholesterol: Whether the individual has low HDL cholesterol (Yes or No).
+
+High LDL Cholesterol: Whether the individual has high LDL cholesterol (Yes or No).
+
+Alcohol Consumption: The individual's alcohol consumption level (None, Low, Medium, High).
+
+Stress Level: The individual's stress level (Low, Medium, High).
+
+Sleep Hours: The number of hours the individual sleeps.
+
+Sugar Consumption: The individual's sugar consumption level (Low, Medium, High).
+
+Triglyceride Level: The individual's triglyceride level.
+
+Fasting Blood Sugar: The individual's fasting blood sugar level.
+
+CRP Level: The C-reactive protein level (a marker of inflammation).
+
+Homocysteine Level: The individual's homocysteine level (an amino acid that affects blood vessel health).
+
+Heart Disease Status: The individual's heart disease status (Yes or No).
