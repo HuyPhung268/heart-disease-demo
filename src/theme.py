@@ -103,16 +103,24 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
 .kpi.alert  {{ border-left: 3px solid {P.rose}; }}
 .kpi.alert .value {{ color: {P.rose}; }}
 
-/* ---- Tabs ---- */
-.stTabs [data-baseweb="tab-list"] {{
+/* ---- Tabs ----
+   Streamlit <=1.5x dùng [data-baseweb="tab"], >=1.6x đổi sang
+   [role="tab"] / [data-testid="stTab"]. Khai báo cả hai để không phụ
+   thuộc phiên bản. */
+.stTabs [data-baseweb="tab-list"],
+.stTabs [role="tablist"] {{
     gap: .3rem; border-bottom: 1px solid rgba({NEUTRAL}, .26); padding-bottom: 0;
 }}
-.stTabs [data-baseweb="tab"] {{
+.stTabs [data-baseweb="tab"],
+.stTabs [role="tab"],
+.stTabs [data-testid="stTab"] {{
     height: 46px; padding: 0 1.05rem; background: transparent;
     border-radius: 9px 9px 0 0; font-weight: 550; font-size: .92rem;
     color: inherit; opacity: .62;
+    display: flex; align-items: center;
 }}
-.stTabs [data-baseweb="tab"]:hover {{ opacity: .9; }}
+.stTabs [data-baseweb="tab"]:hover,
+.stTabs [role="tab"]:hover {{ opacity: .9; }}
 .stTabs [aria-selected="true"] {{
     background: rgba(20, 184, 166, .13) !important;
     color: {P.teal} !important; opacity: 1;

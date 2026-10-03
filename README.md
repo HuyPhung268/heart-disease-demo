@@ -62,8 +62,10 @@ git push -u origin main
 1. Vào https://share.streamlit.io và đăng nhập bằng GitHub.
 2. Bấm **Create app** → **Deploy a public app from GitHub**.
 3. Điền: *Repository* = repo vừa tạo, *Branch* = `main`, *Main file path* = `app.py`.
-4. Mở **Advanced settings** → chọn **Python 3.13** (khớp với môi trường đã huấn luyện).
-5. Bấm **Deploy**. Lần đầu mất khoảng 3–5 phút để cài thư viện.
+4. Bấm **Deploy**. Lần đầu mất khoảng 3–5 phút để cài thư viện.
+
+Bộ phụ thuộc đã được kiểm thử trên **cả Python 3.13 lẫn 3.14**, nên không cần chọn
+phiên bản Python cụ thể trong *Advanced settings*.
 
 ### Những tệp Streamlit Cloud cần
 
@@ -73,6 +75,30 @@ git push -u origin main
 | `packages.txt` | Gói hệ thống Linux — `libgomp1` cho LightGBM |
 | `.streamlit/config.toml` | Theme sáng/tối |
 | `artifacts/*.joblib` | Mô hình đã huấn luyện, commit kèm để app chạy ngay |
+
+### Sự cố đã gặp: pyarrow không build được trên Python 3.14
+
+Lần deploy đầu thất bại với:
+
+```
+× Failed to download and build `pyarrow==21.0.0`
+  error: command 'cmake' failed: No such file or directory
+ERROR: Could not build wheels for pyarrow
+```
+
+Chuỗi nguyên nhân:
+
+1. Streamlit Cloud dựng môi trường bằng **Python 3.14**.
+2. `streamlit==1.51.0` ghim `pyarrow<22`.
+3. pyarrow chỉ có wheel cho Python 3.14 **từ bản 22 trở lên**.
+4. Không có wheel phù hợp → pip build từ mã nguồn → thiếu `cmake` → hỏng.
+
+Cách khắc phục: nâng lên `streamlit==1.65.0` (cho phép `pyarrow<26`) và ghim
+`pyarrow==25.0.1`. Bộ pin hiện tại đã chạy thử trên cả 3.13 lẫn 3.14.
+
+Lưu ý khi tuỳ biến giao diện: Streamlit ≤1.5x đánh dấu tab bằng
+`[data-baseweb="tab"]`, còn ≥1.6x dùng `[role="tab"]`. `src/theme.py` khai báo cả hai
+nên CSS không vỡ khi nâng cấp.
 
 ### Vì sao phải ghim phiên bản chính xác
 
