@@ -292,9 +292,39 @@ BAR_RADIUS = 4          # rounded bar end
 LINE_WIDTH = 2.2
 
 
+# Outline for data marks. A neutral semi-transparent tone so the same value
+# reads as an edge on a white page and on a dark one.
+MARK_EDGE = f"rgb({NEUTRAL})"
+MARK_EDGE_W = 1.6
+MARKER_SIZE = 8          # >= 8px, per the dataviz mark spec
+MARKER_EVERY = 14        # draw a marker on 1 point in N along a dense line
+
+
 def bar_marker(color, **kw):
-    """Standard bar marker: 4px rounded end, no outline."""
-    return dict(color=color, cornerradius=BAR_RADIUS, line=dict(width=0), **kw)
+    """Standard bar marker: 4px rounded end plus a neutral outline."""
+    return dict(
+        color=color,
+        cornerradius=BAR_RADIUS,
+        line=dict(width=MARK_EDGE_W, color=MARK_EDGE),
+        **kw,
+    )
+
+
+def line_markers(x, y, color, every: int = MARKER_EVERY):
+    """Evenly spaced marker positions along a dense line.
+
+    A line such as an ROC curve has hundreds of points; putting a marker on
+    every one is unreadable. This picks roughly one point in ``every``, always
+    keeping the first and last.
+    """
+    n = len(x)
+    if n == 0:
+        return [], []
+    step = max(1, n // max(1, every))
+    idx = list(range(0, n, step))
+    if idx[-1] != n - 1:
+        idx.append(n - 1)
+    return [x[i] for i in idx], [y[i] for i in idx]
 
 
 def labels(fig, position="outside"):

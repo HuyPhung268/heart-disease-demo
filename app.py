@@ -20,7 +20,8 @@ from src.data import (
     load_raw,
 )
 from src.theme import (
-    VALUE_FONT, apply_theme, banner, bar_marker, kpi, labels, note, page_head,
+    MARKER_SIZE, VALUE_FONT, apply_theme, banner, bar_marker, kpi, labels,
+    line_markers, note, page_head,
 )
 
 ROOT = Path(__file__).resolve().parent
@@ -361,8 +362,20 @@ with tabs[2]:
     for i, name in enumerate(pick):
         fpr, tpr = curves[name]["roc"]
         auc = results.loc[results["Model"] == name, "ROC-AUC"].iloc[0]
-        fig.add_trace(go.Scatter(x=fpr, y=tpr, name=f"{name} ({auc:.3f})",
-                                 line=dict(width=2.2, color=P.colorway[i % len(P.colorway)])))
+        colour = P.colorway[i % len(P.colorway)]
+        fig.add_trace(go.Scatter(
+            x=fpr, y=tpr, name=f"{name} ({auc:.3f})", legendgroup=name,
+            line=dict(width=2.2, color=colour),
+        ))
+        # Markers on a thinned subset: a dense ROC curve would otherwise be
+        # one solid band of symbols.
+        mx, my = line_markers(list(fpr), list(tpr), colour)
+        fig.add_trace(go.Scatter(
+            x=mx, y=my, mode="markers", legendgroup=name, showlegend=False,
+            hoverinfo="skip",
+            marker=dict(size=MARKER_SIZE, color=colour, symbol=i % 6,
+                        line=dict(width=1.2, color="rgba(255,255,255,.85)")),
+        ))
     fig.update_layout(height=460, xaxis_title="False positive rate",
                       yaxis_title="True positive rate",
                       legend=dict(y=0.04, x=0.98, xanchor="right"))
@@ -383,6 +396,15 @@ with tabs[2]:
             textfont=dict(size=20, family="Inter", color="#12385C"),
             hovertemplate="Actual %{y}<br>Predicted %{x}<br><b>%{z}</b><extra></extra>",
         ))
+        # Plotly heatmaps have no per-cell border, so draw one rectangle per cell.
+        for xi in range(2):
+            for yi in range(2):
+                fig.add_shape(
+                    type="rect", xref="x", yref="y",
+                    x0=xi - 0.5, x1=xi + 0.5, y0=yi - 0.5, y1=yi + 0.5,
+                    line=dict(color="rgba(18, 56, 92, .55)", width=1.6),
+                    fillcolor="rgba(0,0,0,0)", layer="above",
+                )
         fig.update_layout(height=320, xaxis_title="Predicted", yaxis_title="Actual",
                           yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig, width="stretch")
@@ -477,7 +499,7 @@ def render_tuning():
             mode="markers", name="Fold-to-fold noise band (±1σ)",
             showlegend=show,
             marker=dict(size=13, symbol="diamond-open", color=P.muted,
-                        line=dict(width=2)),
+                        line=dict(width=2.2)),
         ))
     fig.add_hline(y=0, line_color=P.axis, line_width=1.5)
     fig.update_layout(height=430, yaxis_title="ROC-AUC change",
@@ -557,17 +579,21 @@ with tabs[4]:
     fig.add_trace(go.Bar(x=comp["Model"], y=comp["ROC-AUC"], name="ROC-AUC",
                          marker=bar_marker(P.orange), width=0.38, offset=0.02,
                          text=[f"{v:.3f}" for v in comp["ROC-AUC"]]))
-    fig.add_hline(y=0.8, line_dash="dash", line_color=P.accent, line_width=1.6,
-                  annotation_text="baseline accuracy 0.80",
-                  annotation_position="top left",
-                  annotation_font=dict(size=10.5, color=P.accent))
-    fig.add_hline(y=0.5, line_dash="dash", line_color=P.orange, line_width=1.6,
-                  annotation_text="random 0.50",
-                  annotation_position="bottom left",
-                  annotation_font=dict(size=10.5, color=P.orange))
+    fig.add_hline(y=0.8, line_dash="dash", line_color=P.accent, line_width=1.6)
+    fig.add_hline(y=0.5, line_dash="dash", line_color=P.orange, line_width=1.6)
+    # Name the reference lines in the legend rather than with inline annotations,
+    # which collide with the bar value labels.
+    for ref_y, ref_c, ref_name in (
+        (0.8, P.accent, "Baseline accuracy 0.80"),
+        (0.5, P.orange, "Random guessing 0.50"),
+    ):
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None], mode="lines", name=ref_name,
+            line=dict(color=ref_c, width=1.6, dash="dash"), hoverinfo="skip",
+        ))
     labels(fig)
     fig.update_layout(height=440, yaxis_range=[0, 1.12], yaxis_title="Score",
-                      xaxis=dict(tickangle=-25, tickfont=dict(size=10)),
+                      xaxis=dict(tickangle=-90, tickfont=dict(size=10)),
                       legend=dict(orientation="h", y=1.14, x=1, xanchor="right"))
     st.plotly_chart(fig, width="stretch")
     note("Every model's accuracy hugs the baseline's 0.80 line, while every ROC-AUC "
@@ -714,7 +740,7 @@ with tabs[5]:
         labels(fig)
         fig.update_layout(barmode="group", height=430,
                           yaxis_title="Predicted probability", yaxis_tickformat=".0%",
-                          xaxis=dict(tickangle=-25, tickfont=dict(size=9.5)),
+                          xaxis=dict(tickangle=-90, tickfont=dict(size=9.5)),
                           legend=dict(orientation="h", y=1.14, x=1, xanchor="right"))
         st.plotly_chart(fig, width="stretch")
     with c2:
