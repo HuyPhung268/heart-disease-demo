@@ -109,12 +109,17 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
    thuộc phiên bản. */
 .stTabs [data-baseweb="tab-list"],
 .stTabs [role="tablist"] {{
-    gap: .55rem; border-bottom: none; padding-bottom: 0;
-    margin-bottom: 1.5rem; flex-wrap: wrap;
+    gap: .55rem; border-bottom: none; flex-wrap: wrap;
+    /* Streamlit đặt overflow-y:hidden và chiều cao vừa khít thẻ tab, làm mép
+       trên bị cắt. Chừa đệm dọc để viền và hiệu ứng nhấc khi hover không bị xén. */
+    padding: 4px 0 5px 0; height: auto; align-items: center;
+    overflow-y: visible;
+    margin-bottom: 1.2rem;
 }}
 .stTabs [data-baseweb="tab"],
 .stTabs [role="tab"],
 .stTabs [data-testid="stTab"] {{
+    box-sizing: border-box; flex: 0 0 auto;
     height: 46px; padding: 0 1.15rem;
     background: rgba({NEUTRAL}, .06);
     border: 1px solid rgba({NEUTRAL}, .26);
