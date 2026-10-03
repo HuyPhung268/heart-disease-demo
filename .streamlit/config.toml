@@ -1,4 +1,6 @@
 # Giao diện dùng chung cho cả hai chế độ sáng/tối.
+# primaryColor dùng slot 1 của bảng màu đã kiểm định trong src/theme.py
+# (#3987e5) để widget của Streamlit đồng bộ với màu biểu đồ.
 # Người dùng chuyển chế độ ở menu ☰ -> Settings -> Appearance.
 [theme]
 font = "sans serif"
@@ -6,12 +8,12 @@ baseRadius = "0.7rem"
 showWidgetBorder = true
 
 [theme.light]
-primaryColor = "#0D9488"
+primaryColor = "#3987e5"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F8FAFC"
 textColor = "#0F172A"
 borderColor = "#E2E8F0"
-linkColor = "#0D9488"
+linkColor = "#3987e5"
 
 [theme.light.sidebar]
 backgroundColor = "#F8FAFC"
@@ -19,12 +21,12 @@ secondaryBackgroundColor = "#FFFFFF"
 borderColor = "#E2E8F0"
 
 [theme.dark]
-primaryColor = "#2DD4BF"
+primaryColor = "#3987e5"
 backgroundColor = "#0B1120"
 secondaryBackgroundColor = "#111A2E"
 textColor = "#E2E8F0"
 borderColor = "#1E293B"
-linkColor = "#2DD4BF"
+linkColor = "#3987e5"
 
 [theme.dark.sidebar]
 backgroundColor = "#080D18"

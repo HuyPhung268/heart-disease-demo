@@ -21,28 +21,60 @@ NEUTRAL = "138, 148, 166"
 
 @dataclass(frozen=True)
 class Palette:
-    teal: str = "#14B8A6"
-    amber: str = "#F59E0B"
-    indigo: str = "#6366F1"
-    rose: str = "#F43F5E"
-    sky: str = "#0EA5E9"
-    slate: str = "#94A3B8"
+    """Bảng màu phân loại đã qua kiểm định của skill dataviz.
 
-    ink: str = "#8A94A6"                       # chữ phụ trên biểu đồ
-    muted: str = "#8A94A6"
-    line: str = f"rgba({NEUTRAL}, .34)"        # viền, trục
-    axis: str = f"rgba({NEUTRAL}, .45)"        # vạch mốc
+    Dùng cột "dark" của bảng tham chiếu: toàn bộ 8 slot đạt cả 5 phép kiểm
+    (dải độ sáng, sàn chroma, tách màu cho người mù màu, sàn thị giác thường,
+    tương phản >= 3:1) trên CẢ nền sáng #FFFFFF lẫn nền tối #0B1120. Nhờ vậy
+    một bộ màu duy nhất dùng được cho cả hai chế độ, không cần đọc theme lúc
+    chạy. Thứ tự slot là cơ chế an toàn mù màu — gán theo thứ tự, không xoay vòng.
+    """
+    # 8 slot phân loại, theo đúng thứ tự đã kiểm định
+    blue: str = "#3987e5"       # slot 1 — màu nhấn chính của giao diện
+    orange: str = "#d95926"     # slot 2
+    aqua: str = "#199e70"       # slot 3
+    yellow: str = "#c98500"     # slot 4
+    magenta: str = "#d55181"    # slot 5
+    green: str = "#008300"      # slot 6
+    violet: str = "#9085e9"     # slot 7
+    red: str = "#e66767"        # slot 8
+
+    # Màu trạng thái — cố định, không bao giờ dùng làm màu chuỗi dữ liệu
+    good: str = "#0ca30c"
+    warning: str = "#fab219"
+    serious: str = "#ec835a"
+    critical: str = "#d03b3b"
+
+    # Mực và khung biểu đồ. #898781 là màu muted dùng chung cho cả hai chế độ.
+    muted: str = "#898781"
+    ink: str = "#898781"
+    line: str = f"rgba({NEUTRAL}, .34)"
+    axis: str = f"rgba({NEUTRAL}, .45)"
     grid: str = f"rgba({NEUTRAL}, .16)"
-    soft: str = f"rgba({NEUTRAL}, .10)"        # nền đồng hồ đo
+    soft: str = f"rgba({NEUTRAL}, .10)"
 
-    heat_lo: str = "#0E4F4A"                   # ô nhạt của ma trận nhầm lẫn
-    band_good: str = "rgba(34, 197, 94, .24)"
-    band_warn: str = "rgba(245, 158, 11, .24)"
-    band_bad: str = "rgba(244, 63, 94, .24)"
+    heat_lo: str = "#0E3D63"            # đầu đậm của thang ma trận nhầm lẫn
+    band_good: str = "rgba(12, 163, 12, .18)"
+    band_warn: str = "rgba(250, 178, 25, .20)"
+    band_bad: str = "rgba(208, 59, 59, .20)"
 
     colorway: list = field(default_factory=lambda: [
-        "#14B8A6", "#F59E0B", "#6366F1", "#F43F5E", "#0EA5E9", "#94A3B8",
+        "#3987e5", "#d95926", "#199e70", "#c98500",
+        "#d55181", "#008300", "#9085e9", "#e66767",
     ])
+
+    # Vai trò ngữ nghĩa trong dashboard này
+    @property
+    def healthy(self) -> str:      # "Không bệnh" — slot 1
+        return self.blue
+
+    @property
+    def diseased(self) -> str:     # "Có bệnh" — slot 2
+        return self.orange
+
+    @property
+    def accent(self) -> str:       # màu nhấn giao diện
+        return self.blue
 
 
 P = Palette()
@@ -78,7 +110,7 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
 .page-head {{ margin-bottom: 1.6rem; }}
 .page-head .eyebrow {{
     font-size: .72rem; font-weight: 700; letter-spacing: .12em;
-    text-transform: uppercase; color: {P.teal}; margin-bottom: .35rem;
+    text-transform: uppercase; color: {P.accent}; margin-bottom: .35rem;
 }}
 .page-head .lede {{ font-size: .95rem; margin-top: .35rem;
                     color: inherit; opacity: .66; }}
@@ -101,10 +133,10 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
     line-height: 1.15; margin-top: .3rem; font-variant-numeric: tabular-nums;
 }}
 .kpi .sub {{ font-size: .8rem; color: inherit; opacity: .52; margin-top: .22rem; }}
-.kpi.accent {{ border-left: 3px solid {P.teal}; }}
-.kpi.warn   {{ border-left: 3px solid {P.amber}; }}
-.kpi.alert  {{ border-left: 3px solid {P.rose}; }}
-.kpi.alert .value {{ color: {P.rose}; }}
+.kpi.accent {{ border-left: 3px solid {P.accent}; }}
+.kpi.warn   {{ border-left: 3px solid {P.yellow}; }}
+.kpi.alert  {{ border-left: 3px solid {P.critical}; }}
+.kpi.alert .value {{ color: {P.critical}; }}
 
 /* ---- Tabs: bo tròn thành thẻ, đồng bộ với .kpi ----
    Streamlit <=1.5x dùng [data-baseweb="tab"], >=1.6x đổi sang
@@ -140,10 +172,10 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
     opacity: 1; transform: translateY(-1px);
 }}
 .stTabs [aria-selected="true"] {{
-    background: rgba(20, 184, 166, .12) !important;
-    border-color: rgba(20, 184, 166, .55) !important;
-    color: {P.teal} !important; opacity: 1;
-    box-shadow: inset 0 0 0 1px rgba(20, 184, 166, .22);
+    background: rgba(57, 135, 229, .13) !important;
+    border-color: rgba(57, 135, 229, .6) !important;
+    color: {P.accent} !important; opacity: 1;
+    box-shadow: inset 0 0 0 1px rgba(57, 135, 229, .22);
 }}
 /* Gỡ gạch chân mặc định của Streamlit:
    <=1.5x dựng bằng phần tử riêng, >=1.6x dựng bằng ::after trên tablist. */
@@ -188,30 +220,30 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
 
 /* ---- Thẻ kết luận ở sidebar ---- */
 .verdict {{
-    border: 1px solid rgba(244, 63, 94, .34);
-    background: rgba(244, 63, 94, .08);
+    border: 1px solid rgba(208, 59, 59, .34);
+    background: rgba(208, 59, 59, .08);
     border-radius: 14px; padding: .95rem 1rem; margin-top: 1.1rem;
 }}
 .verdict .vhead {{
     font-size: .68rem; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; color: {P.rose}; margin-bottom: .6rem;
+    text-transform: uppercase; color: {P.critical}; margin-bottom: .6rem;
 }}
 .verdict .vbig {{
-    font-size: 1.75rem; font-weight: 700; color: {P.rose};
+    font-size: 1.75rem; font-weight: 700; color: {P.critical};
     line-height: 1.1; font-variant-numeric: tabular-nums;
 }}
 .verdict .vcap {{ font-size: .76rem; opacity: .62; margin-top: .1rem; }}
 .verdict .vrow {{
     display: flex; justify-content: space-between; align-items: baseline;
     font-size: .8rem; padding: .3rem 0;
-    border-top: 1px solid rgba(244, 63, 94, .2);
+    border-top: 1px solid rgba(208, 59, 59, .2);
 }}
 .verdict .vrow:first-of-type {{ margin-top: .7rem; }}
 .verdict .vrow span:first-child {{ opacity: .7; }}
 .verdict .vrow span:last-child {{ font-weight: 650; font-variant-numeric: tabular-nums; }}
 .verdict .vnote {{
     font-size: .79rem; line-height: 1.5; margin-top: .7rem;
-    padding-top: .65rem; border-top: 1px solid rgba(244, 63, 94, .2);
+    padding-top: .65rem; border-top: 1px solid rgba(208, 59, 59, .2);
     opacity: .85;
 }}
 
@@ -220,12 +252,12 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
     border-radius: 12px; padding: 1rem 1.25rem; margin: .5rem 0 1.2rem 0;
     font-size: .92rem; line-height: 1.6; color: inherit;
 }}
-.banner.good {{ background: rgba(34, 197, 94, .11);
-                border: 1px solid rgba(34, 197, 94, .3); border-left: 3px solid #22C55E; }}
-.banner.bad  {{ background: rgba(244, 63, 94, .11);
-                border: 1px solid rgba(244, 63, 94, .3); border-left: 3px solid {P.rose}; }}
-.banner.info {{ background: rgba(14, 165, 233, .11);
-                border: 1px solid rgba(14, 165, 233, .3); border-left: 3px solid {P.sky}; }}
+.banner.good {{ background: rgba(12, 163, 12, .1);
+                border: 1px solid rgba(12, 163, 12, .32); border-left: 3px solid {P.good}; }}
+.banner.bad  {{ background: rgba(208, 59, 59, .1);
+                border: 1px solid rgba(208, 59, 59, .32); border-left: 3px solid {P.critical}; }}
+.banner.info {{ background: rgba(25, 158, 112, .1);
+                border: 1px solid rgba(25, 158, 112, .32); border-left: 3px solid {P.aqua}; }}
 .banner b {{ font-weight: 700; }}
 
 div[data-testid="stForm"] {{
@@ -248,7 +280,26 @@ _TEMPLATE = go.layout.Template(layout=dict(
     legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor=P.line, borderwidth=1,
                 font=dict(size=11, color=P.muted)),
     hoverlabel=dict(font=dict(family="Inter", size=12)),
+    # Khe hở giữa các cột để hai mảng màu không chạm nhau
+    bargap=0.28, bargroupgap=0.12,
 ))
+
+# Kiểu nhãn giá trị: chữ luôn mang màu mực, không bao giờ mang màu chuỗi dữ liệu.
+VALUE_FONT = dict(family="Inter", size=10.5, color=P.muted)
+BAR_RADIUS = 4          # bo đầu cột
+LINE_WIDTH = 2.2
+
+
+def bar_marker(color, **kw):
+    """Marker chuẩn cho cột: bo đầu 4px, không viền."""
+    return dict(color=color, cornerradius=BAR_RADIUS, line=dict(width=0), **kw)
+
+
+def labels(fig, position="outside"):
+    """Bật nhãn giá trị cho mọi trace cột trong figure."""
+    fig.update_traces(textposition=position, textfont=VALUE_FONT,
+                      cliponaxis=False, selector=dict(type="bar"))
+    return fig
 
 
 def apply_theme() -> Palette:

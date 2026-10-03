@@ -192,6 +192,29 @@ Nếu đọc bằng `pd.read_csv()` mặc định, chuỗi `"None"` ở cột `A
 hiểu thành `NaN` và con số phồng lên **2,933 dòng (29.3%)** — gấp gần 6 lần. Đây là ví
 dụ tốt để dạy: một lỗi đọc dữ liệu làm sai lệch toàn bộ đánh giá chất lượng dữ liệu.
 
+## Bảng màu biểu đồ
+
+`src/theme.py` dùng bảng màu phân loại 8 slot đã qua kiểm định:
+
+```
+#3987e5  #d95926  #199e70  #c98500  #d55181  #008300  #9085e9  #e66767
+```
+
+Cả 8 slot đạt **toàn bộ 5 phép kiểm** (dải độ sáng, sàn chroma, tách màu cho người
+mù màu, sàn thị giác thường, tương phản ≥ 3:1) trên **cả** nền sáng `#FFFFFF` lẫn
+nền tối `#0B1120`. Nhờ vậy một bộ màu duy nhất dùng được cho cả hai chế độ mà không
+cần đọc theme lúc chạy.
+
+Hai quy tắc cần giữ khi sửa:
+
+- **Gán màu theo đúng thứ tự slot, không xoay vòng.** Thứ tự này chính là cơ chế an
+  toàn mù màu, không phải để cho đẹp.
+- **Màu trạng thái là dành riêng** (`good` / `warning` / `serious` / `critical`),
+  không bao giờ dùng làm màu cho một chuỗi dữ liệu.
+
+`primaryColor` trong `.streamlit/config.toml` dùng slot 1 để widget của Streamlit
+đồng bộ với màu biểu đồ.
+
 ## Gợi ý khi dạy
 
 Chạy tab 1→5 như một buổi ML bình thường để học sinh tự thấy con số 80% và thấy nó

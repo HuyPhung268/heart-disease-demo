@@ -19,7 +19,9 @@ from src.data import (
     TARGET,
     load_raw,
 )
-from src.theme import apply_theme, banner, kpi, note, page_head
+from src.theme import (
+    VALUE_FONT, apply_theme, banner, bar_marker, kpi, labels, note, page_head,
+)
 
 ROOT = Path(__file__).resolve().parent
 
@@ -188,11 +190,11 @@ with tabs[0]:
             labels=["Không bệnh", "Có bệnh"],
             values=[counts.get("No", 0), counts.get("Yes", 0)],
             hole=0.62, sort=False,
-            marker=dict(colors=[P.slate, P.rose], line=dict(width=0)),
+            marker=dict(colors=[P.healthy, P.diseased], line=dict(width=0)),
             textinfo="percent", textfont=dict(size=13, color="white"),
         ))
         fig.add_annotation(text=f"<b>{len(df):,}</b><br><span style='font-size:11px'>bản ghi</span>",
-                           showarrow=False, font=dict(size=20, color=P.teal))
+                           showarrow=False, font=dict(size=20, color=P.accent))
         fig.update_layout(height=300, showlegend=True,
                           legend=dict(orientation="h", y=-0.08, x=0.5, xanchor="center"))
         st.plotly_chart(fig, width="stretch")
@@ -205,11 +207,14 @@ with tabs[0]:
         miss = miss[miss > 0]
         fig = go.Figure(go.Bar(
             x=miss.values, y=miss.index, orientation="h",
-            marker=dict(color=P.teal, line=dict(width=0)),
+            marker=bar_marker(P.accent),
+            text=[f"{v:.2f}%" for v in miss.values],
             hovertemplate="%{y}: %{x:.2f}%<extra></extra>",
         ))
-        fig.update_layout(height=430, xaxis_title="% giá trị thiếu",
+        fig.update_layout(height=450, xaxis_title="% giá trị thiếu",
+                          xaxis=dict(range=[0, miss.max() * 1.18]),
                           yaxis=dict(tickfont=dict(size=10.5)))
+        labels(fig)
         st.plotly_chart(fig, width="stretch")
         note("Mọi cột thiếu dưới <b>0.35%</b> và phân bố đều, tổng cộng 500 ô trên "
              "200,000 ô. Rải trên 20 cột nên ảnh hưởng <b>500 dòng (5.0%)</b> — xử lý bằng điền khuyết thay vì xoá dòng.")
@@ -220,7 +225,7 @@ with tabs[0]:
 
     if col in NUMERIC_COLS:
         fig = go.Figure()
-        for lbl, color in (("No", P.slate), ("Yes", P.rose)):
+        for lbl, color in (("No", P.healthy), ("Yes", P.diseased)):
             fig.add_trace(go.Histogram(
                 x=df.loc[df[TARGET] == lbl, col], nbinsx=38, opacity=0.72,
                 name="Không bệnh" if lbl == "No" else "Có bệnh",
@@ -231,14 +236,15 @@ with tabs[0]:
     else:
         tmp = df.groupby([col, TARGET]).size().reset_index(name="n")
         fig = go.Figure()
-        for lbl, color in (("No", P.slate), ("Yes", P.rose)):
+        for lbl, color in (("No", P.healthy), ("Yes", P.diseased)):
             sub = tmp[tmp[TARGET] == lbl]
             fig.add_trace(go.Bar(
                 x=sub[col], y=sub["n"], name="Không bệnh" if lbl == "No" else "Có bệnh",
-                marker=dict(color=color, line=dict(width=0)),
+                marker=bar_marker(color), text=[f"{v:,}" for v in sub["n"]],
             ))
-        fig.update_layout(barmode="group", height=330, xaxis_title=col,
+        fig.update_layout(barmode="group", height=360, xaxis_title=col,
                           yaxis_title="Số bản ghi")
+        labels(fig)
     fig.update_layout(legend=dict(orientation="h", y=1.12, x=1, xanchor="right"))
     st.plotly_chart(fig, width="stretch")
 
@@ -348,7 +354,7 @@ with tabs[2]:
                           label_visibility="collapsed")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Ngẫu nhiên (0.500)",
-                             line=dict(dash="dash", color=P.line, width=2)))
+                             line=dict(dash="dash", color=P.muted, width=2)))
     for i, name in enumerate(pick):
         fpr, tpr = curves[name]["roc"]
         auc = results.loc[results["Mô hình"] == name, "ROC-AUC"].iloc[0]
@@ -369,9 +375,9 @@ with tabs[2]:
     with m1:
         fig = go.Figure(go.Heatmap(
             z=cm, x=["Không bệnh", "Có bệnh"], y=["Không bệnh", "Có bệnh"],
-            colorscale=[[0, P.heat_lo], [1, P.teal]], showscale=False,
+            colorscale=[[0, "#EAF2FC"], [1, "#8FBBEE"]], showscale=False,
             text=cm, texttemplate="%{text}",
-            textfont=dict(size=19, family="Inter", color="white"),
+            textfont=dict(size=20, family="Inter", color="#12385C"),
             hovertemplate="Thực tế %{y}<br>Dự đoán %{x}<br><b>%{z}</b><extra></extra>",
         ))
         fig.update_layout(height=320, xaxis_title="Dự đoán", yaxis_title="Thực tế",
@@ -394,13 +400,15 @@ with tabs[2]:
     imp = art["importance"].head(12).sort_values("Độ quan trọng")
     fig = go.Figure(go.Bar(
         x=imp["Độ quan trọng"], y=imp["Biến"], orientation="h",
-        error_x=dict(array=imp["Độ lệch"], color=P.slate, thickness=1.2, width=3),
-        marker=dict(color=[P.rose if v < 0 else P.teal for v in imp["Độ quan trọng"]],
-                    line=dict(width=0)),
+        error_x=dict(array=imp["Độ lệch"], color=P.muted, thickness=1.2, width=3),
+        marker=bar_marker([P.orange if v < 0 else P.accent
+                           for v in imp["Độ quan trọng"]]),
+        text=[f"{v:+.4f}" for v in imp["Độ quan trọng"]],
     ))
     fig.add_vline(x=0, line_color=P.axis, line_width=1.5)
-    fig.update_layout(height=430, xaxis_title="Mức giảm ROC-AUC khi xáo trộn biến",
+    fig.update_layout(height=450, xaxis_title="Mức giảm ROC-AUC khi xáo trộn biến",
                       yaxis=dict(tickfont=dict(size=10.5)))
+    labels(fig)
     st.plotly_chart(fig, width="stretch")
     note("Permutation importance trên LightGBM. Mọi giá trị đều quanh 0 và thanh sai "
          "số cắt qua vạch 0 — xáo trộn bất kỳ biến nào cũng không làm mô hình tệ đi.")
@@ -454,8 +462,11 @@ def render_tuning():
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=tuning["Mô hình"], y=tuning["Cải thiện trên test"], name="Thay đổi trên test",
-        marker=dict(color=[P.rose if v < 0 else P.teal for v in tuning["Cải thiện trên test"]],
-                    line=dict(width=0)), width=0.45,
+        marker=bar_marker([P.orange if v < 0 else P.accent
+                           for v in tuning["Cải thiện trên test"]]),
+        width=0.45, text=[f"{v:+.4f}" for v in tuning["Cải thiện trên test"]],
+        textposition="inside", insidetextanchor="middle", cliponaxis=False,
+        textfont=dict(family="Inter", size=10.5, color="white"),
     ))
     for sign, show in ((1, True), (-1, False)):
         fig.add_trace(go.Scatter(
@@ -466,8 +477,10 @@ def render_tuning():
                         line=dict(width=2)),
         ))
     fig.add_hline(y=0, line_color=P.axis, line_width=1.5)
-    fig.update_layout(height=400, yaxis_title="Thay đổi ROC-AUC",
-                      legend=dict(orientation="h", y=1.14, x=1, xanchor="right"))
+    fig.update_layout(height=430, yaxis_title="Thay đổi ROC-AUC",
+                      margin=dict(l=90, r=30, t=30, b=50),
+                      yaxis=dict(range=[-0.042, 0.042]),
+                      legend=dict(orientation="h", y=1.16, x=1, xanchor="right"))
     st.plotly_chart(fig, width="stretch")
     note("Mức thay đổi của mọi mô hình đều cùng cỡ hoặc nhỏ hơn biên độ dao động tự "
          "nhiên giữa các fold. Để kết luận tinh chỉnh có ích, mức cải thiện phải lớn "
@@ -483,12 +496,18 @@ def render_tuning():
 
     fig = go.Figure(go.Bar(
         x=top["mean_test_score"], y=top["Tổ hợp"], orientation="h",
-        error_x=dict(array=top["std_test_score"], color=P.slate, thickness=1.2, width=3),
-        marker=dict(color=P.teal, line=dict(width=0)),
+        error_x=dict(array=top["std_test_score"], color=P.muted, thickness=1.2, width=3),
+        marker=bar_marker(P.accent),
+        text=[f"{v:.4f}" for v in top["mean_test_score"]],
+        textposition="inside", insidetextanchor="start",
+        textfont=dict(family="Inter", size=10.5, color="white"),
+        cliponaxis=False,
     ))
-    fig.add_vline(x=0.5, line_dash="dash", line_color=P.rose, line_width=1.6,
+    fig.add_vline(x=0.5, line_dash="dash", line_color=P.critical, line_width=1.6,
                   annotation_text="ngẫu nhiên", annotation_position="top")
-    fig.update_layout(height=520, xaxis_title="CV ROC-AUC",
+    fig.update_layout(height=540, xaxis_title="CV ROC-AUC",
+                      xaxis=dict(range=[0, 0.60]),
+                      margin=dict(l=24, r=60),
                       yaxis=dict(tickfont=dict(size=10)))
     st.plotly_chart(fig, width="stretch")
 
@@ -530,16 +549,21 @@ with tabs[4]:
     comp = results.copy()
     fig = go.Figure()
     fig.add_trace(go.Bar(x=comp["Mô hình"], y=comp["Accuracy"], name="Accuracy",
-                         marker=dict(color=P.indigo, line=dict(width=0)), width=0.38,
-                         offset=-0.4))
+                         marker=bar_marker(P.accent), width=0.38, offset=-0.4,
+                         text=[f"{v:.3f}" for v in comp["Accuracy"]]))
     fig.add_trace(go.Bar(x=comp["Mô hình"], y=comp["ROC-AUC"], name="ROC-AUC",
-                         marker=dict(color=P.amber, line=dict(width=0)), width=0.38,
-                         offset=0.02))
-    fig.add_hline(y=0.8, line_dash="dash", line_color=P.indigo, line_width=1.6,
-                  annotation_text="baseline accuracy 0.80", annotation_position="right")
-    fig.add_hline(y=0.5, line_dash="dash", line_color=P.amber, line_width=1.6,
-                  annotation_text="ngẫu nhiên 0.50", annotation_position="right")
-    fig.update_layout(height=420, yaxis_range=[0, 1.05], yaxis_title="Điểm",
+                         marker=bar_marker(P.orange), width=0.38, offset=0.02,
+                         text=[f"{v:.3f}" for v in comp["ROC-AUC"]]))
+    fig.add_hline(y=0.8, line_dash="dash", line_color=P.accent, line_width=1.6,
+                  annotation_text="baseline accuracy 0.80",
+                  annotation_position="top left",
+                  annotation_font=dict(size=10.5, color=P.accent))
+    fig.add_hline(y=0.5, line_dash="dash", line_color=P.orange, line_width=1.6,
+                  annotation_text="ngẫu nhiên 0.50",
+                  annotation_position="bottom left",
+                  annotation_font=dict(size=10.5, color=P.orange))
+    labels(fig)
+    fig.update_layout(height=440, yaxis_range=[0, 1.12], yaxis_title="Điểm",
                       xaxis=dict(tickangle=-25, tickfont=dict(size=10)),
                       legend=dict(orientation="h", y=1.14, x=1, xanchor="right"))
     st.plotly_chart(fig, width="stretch")
@@ -551,11 +575,11 @@ with tabs[4]:
     fig.add_trace(go.Bar(
         x=["Nhãn thật", "Nhãn xáo trộn ngẫu nhiên"],
         y=[ctrl["ROC-AUC (nhãn thật)"], ctrl["ROC-AUC"]],
-        marker=dict(color=[P.teal, P.rose], line=dict(width=0)), width=0.42,
+        marker=bar_marker([P.accent, P.orange]), width=0.42,
         text=[f"{ctrl['ROC-AUC (nhãn thật)']:.4f}", f"{ctrl['ROC-AUC']:.4f}"],
         textposition="outside", textfont=dict(size=15),
     ))
-    fig.add_hline(y=0.5, line_dash="dash", line_color=P.slate, line_width=1.6,
+    fig.add_hline(y=0.5, line_dash="dash", line_color=P.muted, line_width=1.6,
                   annotation_text="ngẫu nhiên")
     fig.update_layout(height=380, yaxis_range=[0.40, 0.58],
                       yaxis_title="ROC-AUC trên tập kiểm tra")
@@ -568,14 +592,15 @@ with tabs[4]:
     corr = corr.sort_values()
     fig = go.Figure(go.Bar(
         x=corr.values, y=corr.index, orientation="h",
-        marker=dict(color=[P.rose if v < 0 else P.teal for v in corr.values],
-                    line=dict(width=0)),
+        marker=bar_marker([P.orange if v < 0 else P.accent for v in corr.values]),
+        text=[f"{v:+.4f}" for v in corr.values],
         hovertemplate="%{y}: %{x:.4f}<extra></extra>",
     ))
     for v in (0.1, -0.1):
-        fig.add_vline(x=v, line_dash="dot", line_color=P.rose, line_width=1.5)
+        fig.add_vline(x=v, line_dash="dot", line_color=P.critical, line_width=1.5)
     fig.add_vline(x=0, line_color=P.axis, line_width=1.5)
-    fig.update_layout(height=400, xaxis_range=[-0.22, 0.22],
+    labels(fig)
+    fig.update_layout(height=420, xaxis_range=[-0.26, 0.26],
                       xaxis_title="Hệ số tương quan với nhãn bệnh",
                       yaxis=dict(tickfont=dict(size=10.5)))
     st.plotly_chart(fig, width="stretch")
@@ -641,7 +666,7 @@ with tabs[5]:
         st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
         r1, r2 = st.columns([1.15, 1], gap="large")
         with r1:
-            gauge_color = P.rose if pred else P.teal
+            gauge_color = P.critical if pred else P.accent
             fig = go.Figure(go.Indicator(
                 mode="gauge+number", value=proba * 100,
                 number={"suffix": "%", "font": {"size": 44, "color": gauge_color}},
@@ -678,12 +703,13 @@ with tabs[5]:
     with c1:
         fig = go.Figure()
         fig.add_trace(go.Bar(x=cmp_df["Mô hình"], y=cmp_df["Khoẻ mạnh"],
-                             name="Hồ sơ khoẻ mạnh",
-                             marker=dict(color=P.teal, line=dict(width=0))))
+                             name="Hồ sơ khoẻ mạnh", marker=bar_marker(P.accent),
+                             text=[f"{v:.0%}" for v in cmp_df["Khoẻ mạnh"]]))
         fig.add_trace(go.Bar(x=cmp_df["Mô hình"], y=cmp_df["Nguy cơ cao"],
-                             name="Hồ sơ nguy cơ cao",
-                             marker=dict(color=P.rose, line=dict(width=0))))
-        fig.update_layout(barmode="group", height=400,
+                             name="Hồ sơ nguy cơ cao", marker=bar_marker(P.orange),
+                             text=[f"{v:.0%}" for v in cmp_df["Nguy cơ cao"]]))
+        labels(fig)
+        fig.update_layout(barmode="group", height=430,
                           yaxis_title="Xác suất mắc bệnh", yaxis_tickformat=".0%",
                           xaxis=dict(tickangle=-25, tickfont=dict(size=9.5)),
                           legend=dict(orientation="h", y=1.14, x=1, xanchor="right"))
