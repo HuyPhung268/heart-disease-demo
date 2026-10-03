@@ -103,29 +103,46 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
 .kpi.alert  {{ border-left: 3px solid {P.rose}; }}
 .kpi.alert .value {{ color: {P.rose}; }}
 
-/* ---- Tabs ----
+/* ---- Tabs: bo tròn thành thẻ, đồng bộ với .kpi ----
    Streamlit <=1.5x dùng [data-baseweb="tab"], >=1.6x đổi sang
    [role="tab"] / [data-testid="stTab"]. Khai báo cả hai để không phụ
    thuộc phiên bản. */
 .stTabs [data-baseweb="tab-list"],
 .stTabs [role="tablist"] {{
-    gap: .3rem; border-bottom: 1px solid rgba({NEUTRAL}, .26); padding-bottom: 0;
+    gap: .55rem; border-bottom: none; padding-bottom: 0;
+    margin-bottom: 1.5rem; flex-wrap: wrap;
 }}
 .stTabs [data-baseweb="tab"],
 .stTabs [role="tab"],
 .stTabs [data-testid="stTab"] {{
-    height: 46px; padding: 0 1.05rem; background: transparent;
-    border-radius: 9px 9px 0 0; font-weight: 550; font-size: .92rem;
-    color: inherit; opacity: .62;
-    display: flex; align-items: center;
+    height: 46px; padding: 0 1.15rem;
+    background: rgba({NEUTRAL}, .06);
+    border: 1px solid rgba({NEUTRAL}, .26);
+    border-radius: 14px;
+    font-weight: 550; font-size: .92rem;
+    color: inherit; opacity: .72;
+    display: flex; align-items: center; white-space: nowrap;
+    transition: background .15s ease, border-color .15s ease,
+                transform .15s ease, opacity .15s ease;
 }}
 .stTabs [data-baseweb="tab"]:hover,
-.stTabs [role="tab"]:hover {{ opacity: .9; }}
-.stTabs [aria-selected="true"] {{
-    background: rgba(20, 184, 166, .13) !important;
-    color: {P.teal} !important; opacity: 1;
-    border-bottom: 2px solid {P.teal};
+.stTabs [role="tab"]:hover {{
+    background: rgba({NEUTRAL}, .12);
+    border-color: rgba({NEUTRAL}, .4);
+    opacity: 1; transform: translateY(-1px);
 }}
+.stTabs [aria-selected="true"] {{
+    background: rgba(20, 184, 166, .12) !important;
+    border-color: rgba(20, 184, 166, .55) !important;
+    color: {P.teal} !important; opacity: 1;
+    box-shadow: inset 0 0 0 1px rgba(20, 184, 166, .22);
+}}
+/* Gỡ gạch chân mặc định của Streamlit:
+   <=1.5x dựng bằng phần tử riêng, >=1.6x dựng bằng ::after trên tablist. */
+.stTabs [data-baseweb="tab-highlight"],
+.stTabs [data-baseweb="tab-border"] {{ display: none !important; }}
+.stTabs [role="tablist"]::after {{ content: none !important; }}
+.stTabs .react-aria-SelectionIndicator {{ display: none !important; }}
 
 [data-testid="stDataFrame"] {{
     border: 1px solid rgba({NEUTRAL}, .26); border-radius: 12px;
@@ -160,6 +177,35 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
 }}
 .side-hint code {{ background: rgba({NEUTRAL}, .18); padding: .05rem .28rem;
                    border-radius: 4px; font-size: .9em; }}
+
+/* ---- Thẻ kết luận ở sidebar ---- */
+.verdict {{
+    border: 1px solid rgba(244, 63, 94, .34);
+    background: rgba(244, 63, 94, .08);
+    border-radius: 14px; padding: .95rem 1rem; margin-top: 1.1rem;
+}}
+.verdict .vhead {{
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: {P.rose}; margin-bottom: .6rem;
+}}
+.verdict .vbig {{
+    font-size: 1.75rem; font-weight: 700; color: {P.rose};
+    line-height: 1.1; font-variant-numeric: tabular-nums;
+}}
+.verdict .vcap {{ font-size: .76rem; opacity: .62; margin-top: .1rem; }}
+.verdict .vrow {{
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: .8rem; padding: .3rem 0;
+    border-top: 1px solid rgba(244, 63, 94, .2);
+}}
+.verdict .vrow:first-of-type {{ margin-top: .7rem; }}
+.verdict .vrow span:first-child {{ opacity: .7; }}
+.verdict .vrow span:last-child {{ font-weight: 650; font-variant-numeric: tabular-nums; }}
+.verdict .vnote {{
+    font-size: .79rem; line-height: 1.5; margin-top: .7rem;
+    padding-top: .65rem; border-top: 1px solid rgba(244, 63, 94, .2);
+    opacity: .85;
+}}
 
 /* ---- Băng kết quả: sắc thái thể hiện bằng nền và viền trái ---- */
 .banner {{

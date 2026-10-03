@@ -121,6 +121,7 @@ curves: dict = art["curves"]
 models: dict = art["models"]
 real_models = [m for m in models if not m.startswith("Baseline")]
 best = results[~results["Mô hình"].str.startswith("Baseline")].iloc[0]
+ctrl = art["control"]          # kết quả thí nghiệm đối chứng nhãn xáo trộn
 
 # --------------------------------------------------------------------- sidebar
 with st.sidebar:
@@ -141,14 +142,17 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="side-hint">🎨 <b>Chế độ sáng / tối</b><br>'
-        'Mở menu <b>☰</b> góc trên phải → <b>Settings</b> → <b>Appearance</b>.<br>'
-        'Giao diện tự khớp ngay, không cần tải lại.</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<div class="side-hint">🔄 <b>Huấn luyện lại</b><br>'
-        '<code>python train.py</code><br><code>python tune.py</code></div>',
+        '<div class="verdict">'
+        '<div class="vhead">Kết luận</div>'
+        f'<div class="vbig">{best["ROC-AUC"]:.3f}</div>'
+        '<div class="vcap">ROC-AUC tốt nhất — ngang đoán ngẫu nhiên (0.500)</div>'
+        f'<div class="vrow"><span>Nhãn xáo trộn</span>'
+        f'<span>{ctrl["ROC-AUC"]:.3f}</span></div>'
+        f'<div class="vrow"><span>Nhãn thật</span>'
+        f'<span>{ctrl["ROC-AUC (nhãn thật)"]:.3f}</span></div>'
+        '<div class="vnote">Nhãn xáo trộn cho kết quả ngang nhãn thật — '
+        'dữ liệu không chứa tín hiệu dự đoán.</div>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -507,7 +511,6 @@ with tabs[4]:
               "Ba kiểm định độc lập đánh giá xem dữ liệu có chứa tín hiệu dự đoán "
               "hay không.")
 
-    ctrl = art["control"]
     y = (df[TARGET] == "Yes").astype(int)
     corr = df[NUMERIC_COLS].corrwith(y)
 

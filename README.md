@@ -97,8 +97,10 @@ Cách khắc phục: nâng lên `streamlit==1.65.0` (cho phép `pyarrow<26`) và
 `pyarrow==25.0.1`. Bộ pin hiện tại đã chạy thử trên cả 3.13 lẫn 3.14.
 
 Lưu ý khi tuỳ biến giao diện: Streamlit ≤1.5x đánh dấu tab bằng
-`[data-baseweb="tab"]`, còn ≥1.6x dùng `[role="tab"]`. `src/theme.py` khai báo cả hai
-nên CSS không vỡ khi nâng cấp.
+`[data-baseweb="tab"]`, còn ≥1.6x dùng `[role="tab"]`. Chỉ báo tab đang chọn cũng
+khác nhau — bản mới dựng bằng `[role="tablist"]::after` và
+`.react-aria-SelectionIndicator`. `src/theme.py` khai báo cả hai nhóm selector nên
+CSS không vỡ khi nâng cấp.
 
 ### Vì sao phải ghim phiên bản chính xác
 
