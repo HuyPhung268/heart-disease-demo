@@ -1,6 +1,6 @@
-"""Tinh chỉnh siêu tham số bằng GridSearchCV và so sánh với mô hình mặc định.
+"""Hyperparameter tuning with GridSearchCV, compared against the defaults.
 
-Chạy:  python tune.py
+Run:  python tune.py
 """
 import warnings
 from pathlib import Path
@@ -23,8 +23,9 @@ ARTIFACTS = Path(__file__).resolve().parent / "artifacts"
 ARTIFACTS.mkdir(exist_ok=True)
 warnings.filterwarnings("ignore")
 
-# (tên, bộ phân loại, cần chuẩn hoá?, lưới siêu tham số)
-# Tiền tố "clf__" là cách sklearn trỏ tham số vào bước tên "clf" trong Pipeline.
+# (name, classifier, needs scaling?, hyperparameter grid)
+# The "clf__" prefix is how sklearn routes a parameter into the Pipeline step
+# named "clf".
 GRIDS = [
     (
         "Logistic Regression",
@@ -79,11 +80,11 @@ def main():
         n_combos = 1
         for v in grid.values():
             n_combos *= len(v)
-        print(f"  -> {name}: {n_combos} tổ hợp × 5 fold = {n_combos * 5} lần fit")
+        print(f"  -> {name}: {n_combos} combos x 5 folds = {n_combos * 5} fits")
 
         pipe = Pipeline([("prep", build_preprocessor(scale=scale)), ("clf", clf)])
 
-        # Mô hình mặc định (không tinh chỉnh) để làm mốc so sánh.
+        # Untuned default model, used as the comparison baseline.
         base = Pipeline([("prep", build_preprocessor(scale=scale)), ("clf", clf)])
         base.fit(X_train, y_train)
         base_auc = roc_auc_score(y_test, base.predict_proba(X_test)[:, 1])
@@ -100,15 +101,15 @@ def main():
         cv_std = search.cv_results_["std_test_score"][search.best_index_]
         rows.append(
             {
-                "Mô hình": name,
-                "Số tổ hợp": n_combos,
-                "CV ROC-AUC (mặc định)": search.cv_results_["mean_test_score"].mean(),
-                "CV ROC-AUC (tốt nhất)": search.best_score_,
-                "Độ lệch CV của tổ hợp tốt nhất": cv_std,
-                "Test ROC-AUC (mặc định)": base_auc,
-                "Test ROC-AUC (đã tinh chỉnh)": tuned_auc,
-                "Cải thiện trên test": tuned_auc - base_auc,
-                "Tham số tốt nhất": str(search.best_params_),
+                "Model": name,
+                "Combos": n_combos,
+                "CV ROC-AUC (grid mean)": search.cv_results_["mean_test_score"].mean(),
+                "CV ROC-AUC (best)": search.best_score_,
+                "CV std of best combo": cv_std,
+                "Test ROC-AUC (default)": base_auc,
+                "Test ROC-AUC (tuned)": tuned_auc,
+                "Test change": tuned_auc - base_auc,
+                "Best params": str(search.best_params_),
             }
         )
         searches[name] = {
@@ -139,11 +140,11 @@ def main():
     pd.set_option("display.width", 250)
     pd.set_option("display.max_colwidth", 60)
     print("\n" + "=" * 130)
-    print(tuning.drop(columns=["Tham số tốt nhất"]).round(4).to_string(index=False))
+    print(tuning.drop(columns=["Best params"]).round(4).to_string(index=False))
     print("=" * 130)
     for r in rows:
-        print(f"\n{r['Mô hình']}: {r['Tham số tốt nhất']}")
-    print(f"\nĐã lưu vào {ARTIFACTS}")
+        print(f"\n{r['Model']}: {r['Best params']}")
+    print(f"\nSaved to {ARTIFACTS}")
 
 
 if __name__ == "__main__":

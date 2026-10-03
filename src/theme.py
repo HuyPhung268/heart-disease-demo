@@ -1,13 +1,13 @@
-"""Giao diện dùng chung: bảng màu, CSS và template biểu đồ.
+"""Shared look and feel: palette, CSS and the chart template.
 
-Chế độ sáng/tối do Streamlit quản lý (menu ☰ → Settings → Appearance) và được
-khai báo trong .streamlit/config.toml.
+Light/dark mode is owned by Streamlit (menu > Settings > Appearance) and
+declared in .streamlit/config.toml.
 
-Nguyên tắc thiết kế: mọi thành phần tự vẽ ở đây đều **không phụ thuộc theme**.
-Màu nền dùng rgba trung tính, màu chữ dùng ``inherit``, nền biểu đồ để trong
-suốt. Nhờ vậy giao diện đổi theo theme ngay lập tức, không phải chạy lại script
-và không lệ thuộc ``st.context.theme`` (API này báo sai đúng lúc người dùng
-chuyển theme).
+Design rule: every component drawn here is **theme-independent**. Backgrounds
+use neutral rgba, text uses ``inherit``, chart backgrounds are transparent.
+That way the UI follows the theme instantly, with no rerun, and without relying
+on ``st.context.theme`` (that API reports the wrong value at the exact moment
+the user switches theme).
 """
 from dataclasses import dataclass, field
 
@@ -15,22 +15,23 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
 
-# Sắc độ trung tính, đọc được trên cả nền trắng lẫn nền tối.
+# Neutral tone that reads on both a white and a dark surface.
 NEUTRAL = "138, 148, 166"
 
 
 @dataclass(frozen=True)
 class Palette:
-    """Bảng màu phân loại đã qua kiểm định của skill dataviz.
+    """Validated categorical palette from the dataviz skill.
 
-    Dùng cột "dark" của bảng tham chiếu: toàn bộ 8 slot đạt cả 5 phép kiểm
-    (dải độ sáng, sàn chroma, tách màu cho người mù màu, sàn thị giác thường,
-    tương phản >= 3:1) trên CẢ nền sáng #FFFFFF lẫn nền tối #0B1120. Nhờ vậy
-    một bộ màu duy nhất dùng được cho cả hai chế độ, không cần đọc theme lúc
-    chạy. Thứ tự slot là cơ chế an toàn mù màu — gán theo thứ tự, không xoay vòng.
+    Uses the reference palette's "dark" column: all 8 slots pass all five
+    checks (lightness band, chroma floor, CVD separation, normal-vision floor,
+    contrast >= 3:1) against BOTH the light surface #FFFFFF and the dark
+    surface #0B1120. One palette therefore serves both modes with no need to
+    read the theme at runtime. Slot order is the colour-blind safety
+    mechanism - assign in order, never cycle.
     """
-    # 8 slot phân loại, theo đúng thứ tự đã kiểm định
-    blue: str = "#3987e5"       # slot 1 — màu nhấn chính của giao diện
+    # 8 categorical slots, in the validated order
+    blue: str = "#3987e5"       # slot 1 - the primary UI accent
     orange: str = "#d95926"     # slot 2
     aqua: str = "#199e70"       # slot 3
     yellow: str = "#c98500"     # slot 4
@@ -39,13 +40,13 @@ class Palette:
     violet: str = "#9085e9"     # slot 7
     red: str = "#e66767"        # slot 8
 
-    # Màu trạng thái — cố định, không bao giờ dùng làm màu chuỗi dữ liệu
+    # Status colours - fixed, never reused as a data series colour
     good: str = "#0ca30c"
     warning: str = "#fab219"
     serious: str = "#ec835a"
     critical: str = "#d03b3b"
 
-    # Mực và khung biểu đồ. #898781 là màu muted dùng chung cho cả hai chế độ.
+    # Ink and chart chrome. #898781 is the muted tone shared by both modes.
     muted: str = "#898781"
     ink: str = "#898781"
     line: str = f"rgba({NEUTRAL}, .34)"
@@ -53,7 +54,7 @@ class Palette:
     grid: str = f"rgba({NEUTRAL}, .16)"
     soft: str = f"rgba({NEUTRAL}, .10)"
 
-    heat_lo: str = "#0E3D63"            # đầu đậm của thang ma trận nhầm lẫn
+    heat_lo: str = "#0E3D63"            # dark end of the confusion-matrix ramp
     band_good: str = "rgba(12, 163, 12, .18)"
     band_warn: str = "rgba(250, 178, 25, .20)"
     band_bad: str = "rgba(208, 59, 59, .20)"
@@ -63,17 +64,17 @@ class Palette:
         "#d55181", "#008300", "#9085e9", "#e66767",
     ])
 
-    # Vai trò ngữ nghĩa trong dashboard này
+    # Semantic roles used across this dashboard
     @property
-    def healthy(self) -> str:      # "Không bệnh" — slot 1
+    def healthy(self) -> str:      # "No disease" - slot 1
         return self.blue
 
     @property
-    def diseased(self) -> str:     # "Có bệnh" — slot 2
+    def diseased(self) -> str:     # "Has disease" - slot 2
         return self.orange
 
     @property
-    def accent(self) -> str:       # màu nhấn giao diện
+    def accent(self) -> str:       # UI accent
         return self.blue
 
 
@@ -88,11 +89,11 @@ html, body, [class*="css"], .stMarkdown, .stMetric {{
 }}
 footer, header [data-testid="stStatusWidget"] {{ visibility: hidden; }}
 
-/* ---- Chiều rộng: dùng trọn màn hình ---- */
+/* ---- Width: use the full screen ---- */
 .block-container {{
-    /* Streamlit có header đục (nền trắng/tối, z-index rất cao) cao 60px phủ
-       từ đỉnh trang. Đệm trên phải lớn hơn 60px, nếu không mép trên của thẻ
-       tab đầu tiên sẽ bị header che mất. */
+    /* Streamlit paints an opaque 60px header (very high z-index) across the
+       top of the page. Top padding must exceed 60px, otherwise the header
+       clips the top edge of the first row of tab cards. */
     padding: 4.6rem 2.6rem 3rem 2.6rem;
     max-width: 100% !important;
 }}
@@ -106,7 +107,7 @@ h2 {{ font-weight: 650; letter-spacing: -.02em;
 h3 {{ font-weight: 600; letter-spacing: -.01em;
      font-size: 1.1rem !important; margin-top: 1.7rem !important; }}
 
-/* ---- Tiêu đề trang ---- */
+/* ---- Page heading ---- */
 .page-head {{ margin-bottom: 1.6rem; }}
 .page-head .eyebrow {{
     font-size: .72rem; font-weight: 700; letter-spacing: .12em;
@@ -115,7 +116,7 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
 .page-head .lede {{ font-size: .95rem; margin-top: .35rem;
                     color: inherit; opacity: .66; }}
 
-/* ---- Thẻ số liệu ---- */
+/* ---- Stat cards ---- */
 .kpi {{
     background: rgba({NEUTRAL}, .06);
     border: 1px solid rgba({NEUTRAL}, .26);
@@ -138,15 +139,16 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
 .kpi.alert  {{ border-left: 3px solid {P.critical}; }}
 .kpi.alert .value {{ color: {P.critical}; }}
 
-/* ---- Tabs: bo tròn thành thẻ, đồng bộ với .kpi ----
-   Streamlit <=1.5x dùng [data-baseweb="tab"], >=1.6x đổi sang
-   [role="tab"] / [data-testid="stTab"]. Khai báo cả hai để không phụ
-   thuộc phiên bản. */
+/* ---- Tabs: rounded cards that match .kpi ----
+   Streamlit <=1.5x uses [data-baseweb="tab"], >=1.6x switched to
+   [role="tab"] / [data-testid="stTab"]. Declare both so the CSS does not
+   depend on the version. */
 .stTabs [data-baseweb="tab-list"],
 .stTabs [role="tablist"] {{
     gap: .55rem; border-bottom: none; flex-wrap: wrap;
-    /* Streamlit đặt overflow-y:hidden và chiều cao vừa khít thẻ tab, làm mép
-       trên bị cắt. Chừa đệm dọc để viền và hiệu ứng nhấc khi hover không bị xén. */
+    /* Streamlit sets overflow-y:hidden with a height that exactly matches the
+       tab card, clipping its top edge. Add vertical padding so the border and
+       the hover lift are not cut off. */
     padding: 4px 0 5px 0; height: auto; align-items: center;
     overflow-y: visible;
     margin-bottom: 1.2rem;
@@ -177,8 +179,8 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
     color: {P.accent} !important; opacity: 1;
     box-shadow: inset 0 0 0 1px rgba(57, 135, 229, .22);
 }}
-/* Gỡ gạch chân mặc định của Streamlit:
-   <=1.5x dựng bằng phần tử riêng, >=1.6x dựng bằng ::after trên tablist. */
+/* Remove Streamlit's own tab underline:
+   <=1.5x uses a dedicated element, >=1.6x uses ::after on the tablist. */
 .stTabs [data-baseweb="tab-highlight"],
 .stTabs [data-baseweb="tab-border"] {{ display: none !important; }}
 .stTabs [role="tablist"]::after {{ content: none !important; }}
@@ -188,7 +190,7 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
     border: 1px solid rgba({NEUTRAL}, .26); border-radius: 12px;
 }}
 
-/* ---- Chú thích dưới biểu đồ ---- */
+/* ---- Caption under a chart ---- */
 .note {{
     font-size: .85rem; color: inherit; opacity: .68;
     border-left: 2px solid rgba({NEUTRAL}, .3);
@@ -218,7 +220,7 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
 .side-hint code {{ background: rgba({NEUTRAL}, .18); padding: .05rem .28rem;
                    border-radius: 4px; font-size: .9em; }}
 
-/* ---- Thẻ kết luận ở sidebar ---- */
+/* ---- Verdict card in the sidebar ---- */
 .verdict {{
     border: 1px solid rgba(208, 59, 59, .34);
     background: rgba(208, 59, 59, .08);
@@ -247,7 +249,7 @@ h3 {{ font-weight: 600; letter-spacing: -.01em;
     opacity: .85;
 }}
 
-/* ---- Băng kết quả: sắc thái thể hiện bằng nền và viền trái ---- */
+/* ---- Result banner: tone carried by the tint and the left border ---- */
 .banner {{
     border-radius: 12px; padding: 1rem 1.25rem; margin: .5rem 0 1.2rem 0;
     font-size: .92rem; line-height: 1.6; color: inherit;
@@ -280,30 +282,30 @@ _TEMPLATE = go.layout.Template(layout=dict(
     legend=dict(bgcolor="rgba(0,0,0,0)", bordercolor=P.line, borderwidth=1,
                 font=dict(size=11, color=P.muted)),
     hoverlabel=dict(font=dict(family="Inter", size=12)),
-    # Khe hở giữa các cột để hai mảng màu không chạm nhau
+    # Gap between bars so two colour blocks never touch
     bargap=0.28, bargroupgap=0.12,
 ))
 
-# Kiểu nhãn giá trị: chữ luôn mang màu mực, không bao giờ mang màu chuỗi dữ liệu.
+# Value-label style: text always wears ink, never the series colour.
 VALUE_FONT = dict(family="Inter", size=10.5, color=P.muted)
-BAR_RADIUS = 4          # bo đầu cột
+BAR_RADIUS = 4          # rounded bar end
 LINE_WIDTH = 2.2
 
 
 def bar_marker(color, **kw):
-    """Marker chuẩn cho cột: bo đầu 4px, không viền."""
+    """Standard bar marker: 4px rounded end, no outline."""
     return dict(color=color, cornerradius=BAR_RADIUS, line=dict(width=0), **kw)
 
 
 def labels(fig, position="outside"):
-    """Bật nhãn giá trị cho mọi trace cột trong figure."""
+    """Turn on value labels for every bar trace in the figure."""
     fig.update_traces(textposition=position, textfont=VALUE_FONT,
                       cliponaxis=False, selector=dict(type="bar"))
     return fig
 
 
 def apply_theme() -> Palette:
-    """Nạp CSS, đặt template Plotly mặc định và trả về bảng màu."""
+    """Inject the CSS, set the default Plotly template, return the palette."""
     pio.templates["demo"] = _TEMPLATE
     pio.templates.default = "demo"
     st.markdown(CSS, unsafe_allow_html=True)

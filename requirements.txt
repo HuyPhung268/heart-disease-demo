@@ -1,11 +1,12 @@
-# Phụ thuộc của ứng dụng Streamlit (Streamlit Cloud đọc đúng file này).
+# Dependencies for the Streamlit app (this is the file Streamlit Cloud reads).
 #
-# Ghim chính xác phiên bản vì artifacts/*.joblib là pickle của sklearn và
-# LightGBM — lệch phiên bản sẽ nạp mô hình thất bại.
+# Versions are pinned exactly because artifacts/*.joblib are pickles of
+# scikit-learn and LightGBM objects; a version mismatch breaks model loading.
 #
-# streamlit phải >=1.61: các bản cũ ghim pyarrow<22, mà pyarrow chỉ có wheel
-# cho Python 3.14 từ bản 22 trở lên. Bộ pin dưới đây đã kiểm thử trên CẢ
-# Python 3.13 lẫn 3.14 nên không phụ thuộc phiên bản Python mà Cloud chọn.
+# streamlit must be >=1.61: older releases pin pyarrow<22, and pyarrow only
+# ships Python 3.14 wheels from version 22 onward. The pin set below is tested
+# on BOTH Python 3.13 and 3.14, so it does not depend on which Python version
+# Cloud happens to choose.
 streamlit==1.65.0
 pyarrow==25.0.1
 pandas==2.3.3
@@ -14,5 +15,5 @@ scikit-learn==1.7.2
 lightgbm==4.6.0
 plotly==6.3.0
 joblib==1.5.2
-# pandas Styler.background_gradient cần matplotlib (dùng ở bảng chỉ số).
+# pandas Styler.background_gradient needs matplotlib (used in the metrics table).
 matplotlib==3.10.6

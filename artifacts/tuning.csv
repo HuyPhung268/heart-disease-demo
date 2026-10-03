@@ -1,4 +1,4 @@
-Mô hình,Số tổ hợp,CV ROC-AUC (mặc định),CV ROC-AUC (tốt nhất),Độ lệch CV của tổ hợp tốt nhất,Test ROC-AUC (mặc định),Test ROC-AUC (đã tinh chỉnh),Cải thiện trên test,Tham số tốt nhất
+Model,Combos,CV ROC-AUC (grid mean),CV ROC-AUC (best),CV std of best combo,Test ROC-AUC (default),Test ROC-AUC (tuned),Test change,Best params
 Logistic Regression,16,0.5132843475341797,0.5191259765625,0.016775631409770307,0.46795937500000007,0.470121875,0.002162499999999956,"{'clf__C': 0.1, 'clf__class_weight': None, 'clf__penalty': 'l1', 'clf__solver': 'liblinear'}"
 Decision Tree,24,0.5032171122233073,0.511775634765625,0.01605794032945094,0.496875,0.5117414062500001,0.014866406250000075,"{'clf__criterion': 'entropy', 'clf__max_depth': 5, 'clf__min_samples_leaf': 1}"
 Random Forest,12,0.5018391316731771,0.5059765625000001,0.02566834626234414,0.5126531250000002,0.4851171875,-0.027535937500000163,"{'clf__max_depth': None, 'clf__min_samples_leaf': 20, 'clf__n_estimators': 300}"

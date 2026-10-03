@@ -1,7 +1,7 @@
-# Giao diện dùng chung cho cả hai chế độ sáng/tối.
-# primaryColor dùng slot 1 của bảng màu đã kiểm định trong src/theme.py
-# (#3987e5) để widget của Streamlit đồng bộ với màu biểu đồ.
-# Người dùng chuyển chế độ ở menu ☰ -> Settings -> Appearance.
+# Shared look and feel for both light and dark mode.
+# primaryColor uses slot 1 of the validated palette in src/theme.py (#3987e5)
+# so Streamlit's own widgets match the chart colours.
+# Users switch mode from the menu -> Settings -> Appearance.
 [theme]
 font = "sans serif"
 baseRadius = "0.7rem"

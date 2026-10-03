@@ -1,6 +1,6 @@
-"""Huấn luyện và so sánh toàn bộ mô hình, lưu kết quả vào thư mục artifacts/.
+"""Train and compare every model, writing results into artifacts/.
 
-Chạy:  python train.py
+Run:  python train.py
 """
 import warnings
 from pathlib import Path
@@ -33,7 +33,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def evaluate(name, pipe, X_train, X_test, y_train, y_test, cv):
-    """Huấn luyện một pipeline rồi đo trên cả cross-validation lẫn tập test."""
+    """Fit one pipeline and score it with cross-validation and on the test set."""
     cv_auc = cross_val_score(pipe, X_train, y_train, cv=cv, scoring="roc_auc", n_jobs=-1)
     pipe.fit(X_train, y_train)
 
@@ -41,9 +41,9 @@ def evaluate(name, pipe, X_train, X_test, y_train, y_test, cv):
     y_proba = pipe.predict_proba(X_test)[:, 1]
 
     row = {
-        "Mô hình": name,
+        "Model": name,
         "CV ROC-AUC": cv_auc.mean(),
-        "CV ROC-AUC (độ lệch)": cv_auc.std(),
+        "CV ROC-AUC (std)": cv_auc.std(),
         "Accuracy": accuracy_score(y_test, y_pred),
         "Balanced Acc": balanced_accuracy_score(y_test, y_pred),
         "Precision": precision_score(y_test, y_pred, zero_division=0),
@@ -65,10 +65,10 @@ def evaluate(name, pipe, X_train, X_test, y_train, y_test, cv):
 
 
 def shuffled_control(pipe, X_train, X_test, y_train, y_test):
-    """Thí nghiệm đối chứng: xáo trộn nhãn để phá huỷ mọi liên hệ feature-target.
+    """Control experiment: shuffle the labels to destroy any feature-target link.
 
-    Nếu điểm số trên nhãn thật không cao hơn trên nhãn xáo trộn thì mô hình
-    không học được gì cả.
+    If real labels score no better than shuffled ones, the model has learned
+    nothing at all.
     """
     rng = np.random.default_rng(SEED)
     y_shuf = pd.Series(rng.permutation(y_train.values), index=y_train.index)
@@ -81,11 +81,11 @@ def shuffled_control(pipe, X_train, X_test, y_train, y_test):
 
 
 def export_splits(X_train, X_test, y_train, y_test):
-    """Ghi tập train/test ra CSV để xem được bằng mắt.
+    """Write the train/test split to CSV so it can be inspected by eye.
 
-    Lưu ý: hai tệp này KHÔNG phải đầu vào của chương trình. Nguồn dữ liệu duy nhất
-    vẫn là Dataset/heart_disease.csv; việc chia tách diễn ra trong bộ nhớ bằng
-    train_test_split(). Xuất ra đây chỉ để minh hoạ cho người học.
+    Note: these two files are NOT program inputs. The only data source remains
+    Dataset/heart_disease.csv; the split happens in memory via
+    train_test_split(). They are exported purely as a teaching aid.
     """
     train = X_train.copy()
     train["Heart Disease Status"] = y_train.map({0: "No", 1: "Yes"})
@@ -93,8 +93,8 @@ def export_splits(X_train, X_test, y_train, y_test):
     test["Heart Disease Status"] = y_test.map({0: "No", 1: "Yes"})
     train.to_csv(ARTIFACTS / "train_set.csv", index=False)
     test.to_csv(ARTIFACTS / "test_set.csv", index=False)
-    print(f"Đã xuất train_set.csv ({len(train):,} dòng) "
-          f"và test_set.csv ({len(test):,} dòng)")
+    print(f"Exported train_set.csv ({len(train):,} rows) "
+          f"and test_set.csv ({len(test):,} rows)")
 
 
 def main():
@@ -115,15 +115,15 @@ def main():
 
     results = pd.DataFrame(rows).sort_values("ROC-AUC", ascending=False)
 
-    print("\nThí nghiệm đối chứng (nhãn xáo trộn)...")
-    real = results[~results["Mô hình"].str.startswith("Baseline")]
-    best = real.iloc[0]["Mô hình"]
+    print("\nControl experiment (shuffled labels)...")
+    real = results[~results["Model"].str.startswith("Baseline")]
+    best = real.iloc[0]["Model"]
     best_auc = float(real.iloc[0]["ROC-AUC"])
     control = shuffled_control(
         build_pipelines()[best], X_train, X_test, y_train, y_test
     )
 
-    print("Tính permutation importance...")
+    print("Computing permutation importance...")
     ref = fitted["LightGBM"]
     perm = permutation_importance(
         ref, X_test, y_test, scoring="roc_auc",
@@ -132,16 +132,16 @@ def main():
     importance = (
         pd.DataFrame(
             {
-                "Biến": X_test.columns,
-                "Độ quan trọng": perm.importances_mean,
-                "Độ lệch": perm.importances_std,
+                "Feature": X_test.columns,
+                "Importance": perm.importances_mean,
+                "Std": perm.importances_std,
             }
         )
-        .sort_values("Độ quan trọng", ascending=False)
+        .sort_values("Importance", ascending=False)
         .reset_index(drop=True)
     )
 
-    control["ROC-AUC (nhãn thật)"] = best_auc
+    control["ROC-AUC (real labels)"] = best_auc
 
     joblib.dump(
         {
@@ -162,9 +162,9 @@ def main():
     print("\n" + "=" * 100)
     print(results.round(4).to_string(index=False))
     print("=" * 100)
-    print(f"\nĐối chứng nhãn xáo trộn ({best}): "
+    print(f"\nShuffled-label control ({best}): "
           f"Accuracy={control['Accuracy']:.4f}  ROC-AUC={control['ROC-AUC']:.4f}")
-    print(f"\nĐã lưu vào {ARTIFACTS}")
+    print(f"\nSaved to {ARTIFACTS}")
 
 
 if __name__ == "__main__":

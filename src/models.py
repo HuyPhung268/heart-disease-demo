@@ -1,4 +1,4 @@
-"""Danh mục mô hình đem ra so sánh."""
+"""The set of models we compare."""
 from lightgbm import LGBMClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
@@ -11,39 +11,41 @@ from .data import build_preprocessor
 
 SEED = 42
 
-# (tên, bộ phân loại, có cần chuẩn hoá thang đo không, mô tả ngắn cho học sinh)
+# (name, classifier, needs feature scaling, short note for students)
 MODEL_SPECS = [
     (
-        "Baseline (đoán lớp đa số)",
+        "Baseline (majority class)",
         DummyClassifier(strategy="most_frequent"),
         False,
-        "Luôn đoán 'Không bệnh'. Mốc tối thiểu mà mọi mô hình phải vượt qua.",
+        "Always predicts 'No disease'. The floor every model must beat.",
     ),
     (
         "Logistic Regression",
         LogisticRegression(max_iter=1000, random_state=SEED),
         True,
-        "Mô hình tuyến tính, dễ diễn giải: mỗi biến có một hệ số ảnh hưởng.",
+        "A linear model that is easy to interpret: one coefficient per feature.",
     ),
     (
-        "Logistic Regression (cân bằng lớp)",
+        "Logistic Regression (balanced)",
         LogisticRegression(
             max_iter=1000, class_weight="balanced", random_state=SEED
         ),
         True,
-        "Như trên nhưng phạt nặng hơn khi bỏ sót ca bệnh -> recall cao, accuracy giảm.",
+        "Same model, but missing a disease case is penalised harder — higher "
+        "recall, lower accuracy.",
     ),
     (
         "K-Nearest Neighbors",
         KNeighborsClassifier(n_neighbors=25, n_jobs=-1),
         True,
-        "Dự đoán theo 25 hàng xóm gần nhất. Rất nhạy với thang đo nên bắt buộc chuẩn hoá.",
+        "Predicts from the 25 nearest neighbours. Very sensitive to feature "
+        "scale, so scaling is mandatory.",
     ),
     (
         "Decision Tree",
         DecisionTreeClassifier(max_depth=5, random_state=SEED),
         False,
-        "Cây quyết định giới hạn độ sâu 5 để tránh học vẹt.",
+        "A decision tree capped at depth 5 to limit memorisation.",
     ),
     (
         "Random Forest",
@@ -51,13 +53,13 @@ MODEL_SPECS = [
             n_estimators=300, max_depth=8, random_state=SEED, n_jobs=-1
         ),
         False,
-        "Trung bình 300 cây độc lập (bagging) để giảm phương sai.",
+        "Averages 300 independent trees (bagging) to reduce variance.",
     ),
     (
         "HistGradientBoosting",
         HistGradientBoostingClassifier(random_state=SEED),
         False,
-        "Boosting: các cây nối tiếp nhau, cây sau sửa lỗi cây trước.",
+        "Boosting: trees are built in sequence, each correcting the last.",
     ),
     (
         "LightGBM",
@@ -66,7 +68,7 @@ MODEL_SPECS = [
             n_jobs=-1, verbose=-1,
         ),
         False,
-        "Boosting tối ưu tốc độ, thường là mô hình mạnh nhất trên dữ liệu bảng.",
+        "Speed-optimised boosting, usually the strongest model on tabular data.",
     ),
 ]
 
@@ -74,7 +76,7 @@ MODEL_NOTES = {name: note for name, _, _, note in MODEL_SPECS}
 
 
 def build_pipelines() -> dict[str, Pipeline]:
-    """Ghép bộ tiền xử lý phù hợp với từng mô hình thành Pipeline hoàn chỉnh."""
+    """Attach the right preprocessor to each model to form a full Pipeline."""
     return {
         name: Pipeline(
             [("prep", build_preprocessor(scale=scale)), ("clf", clf)]

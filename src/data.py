@@ -1,4 +1,4 @@
-"""Nạp dữ liệu và xây pipeline tiền xử lý cho bộ heart_disease."""
+"""Data loading and the preprocessing pipeline for the heart_disease dataset."""
 from pathlib import Path
 
 import pandas as pd
@@ -24,7 +24,8 @@ NUMERIC_COLS = [
     "Homocysteine Level",
 ]
 
-# Biến thứ bậc: thứ tự có ý nghĩa nên mã hoá bằng số tăng dần, không one-hot.
+# Ordinal features: the order carries meaning, so encode them as increasing
+# integers rather than one-hot.
 ORDINAL_COLS = {
     "Exercise Habits": ["Low", "Medium", "High"],
     "Alcohol Consumption": ["None", "Low", "Medium", "High"],
@@ -32,7 +33,7 @@ ORDINAL_COLS = {
     "Sugar Consumption": ["Low", "Medium", "High"],
 }
 
-# Biến danh mục không có thứ tự -> one-hot.
+# Nominal features: no inherent order, so one-hot encode them.
 NOMINAL_COLS = [
     "Gender",
     "Smoking",
@@ -47,17 +48,18 @@ FEATURE_COLS = NUMERIC_COLS + list(ORDINAL_COLS) + NOMINAL_COLS
 
 
 def load_raw(path: Path | str = DATA_PATH) -> pd.DataFrame:
-    """Đọc CSV.
+    """Read the CSV.
 
-    Quan trọng: pandas mặc định coi chuỗi "None" là giá trị thiếu, trong khi ở cột
-    Alcohol Consumption thì "None" là một hạng mục hợp lệ (không uống rượu).
-    Vì vậy phải tắt danh sách NA mặc định và chỉ coi ô rỗng là thiếu.
+    Important: pandas treats the string "None" as a missing value by default,
+    but in the Alcohol Consumption column "None" is a valid category meaning
+    "does not drink". So we disable the default NA list and treat only empty
+    cells as missing.
     """
     return pd.read_csv(path, keep_default_na=False, na_values=[""])
 
 
 def load_xy(path: Path | str = DATA_PATH):
-    """Trả về (X, y) với y là nhãn nhị phân 1 = có bệnh."""
+    """Return (X, y) where y is the binary label, 1 = has heart disease."""
     df = load_raw(path)
     y = (df[TARGET] == "Yes").astype(int)
     X = df[FEATURE_COLS].copy()
@@ -65,7 +67,7 @@ def load_xy(path: Path | str = DATA_PATH):
 
 
 def get_splits(test_size: float = 0.2, random_state: int = 42):
-    """Chia train/test có phân tầng để giữ nguyên tỷ lệ 80/20 của nhãn."""
+    """Stratified train/test split that preserves the 80/20 class balance."""
     X, y = load_xy()
     return train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
@@ -73,9 +75,9 @@ def get_splits(test_size: float = 0.2, random_state: int = 42):
 
 
 def build_preprocessor(scale: bool = True) -> ColumnTransformer:
-    """Pipeline tiền xử lý: điền khuyết -> mã hoá -> chuẩn hoá.
+    """Preprocessing pipeline: impute -> encode -> scale.
 
-    scale=False dùng cho các mô hình cây (không cần chuẩn hoá thang đo).
+    Pass scale=False for tree-based models, which do not need feature scaling.
     """
     numeric_steps = [("impute", SimpleImputer(strategy="median"))]
     if scale:
@@ -105,5 +107,5 @@ def build_preprocessor(scale: bool = True) -> ColumnTransformer:
 
 
 def feature_names(preprocessor: ColumnTransformer) -> list[str]:
-    """Tên cột sau khi biến đổi, dùng để vẽ biểu đồ độ quan trọng."""
+    """Transformed column names, used for importance charts."""
     return list(preprocessor.get_feature_names_out())
